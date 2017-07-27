@@ -1,13 +1,11 @@
 # A makefile to build TPCH dbgen on a modern Linux, FreeBSD or macOS system,
 # and convert its DDL and test queries into a format that PostgreSQL can run.
 #
-# The end result should be two directories:
+# The end result should be the following:
 #
 # postgresql-queries: versions of the TPC-H queries suitable for PostgreSQL
 # postgresql-schema:  versions of the DDL suitable for PostgreSQL
-# data-scale-X:       data files for scale X gigabytes
-#
-# Run as "make TPCH_SCALE=X" for scales other than 1.
+# build/dbgen:        binary for generating data (use make-data.sh to run it)
 
 # The TPC-H dbgen tool is available from many locations.  This one happens to
 # be the top search result on Google today.  Let's use a specific commit so as
@@ -19,14 +17,11 @@ TPCH_DBGEN_GITHUB_REPO=tpch-dbgen
 TPCH_DBGEN_GITHUB_COMMIT=5eab24aa876b56d2620c18f0a5a38c6348db37e7
 TPCH_DBGEN_GITHUB_ZIP=https://github.com/$(TPCH_DBGEN_GITHUB_USER)/$(TPCH_DBGEN_GITHUB_REPO)/archive/$(TPCH_DBGEN_GITHUB_COMMIT).zip
 
-# Approximate number of gigabytes of data to create.
-TPCH_SCALE?=1
-
-all: postgresql-queries postgresql-schema data-scale-$(TPCH_SCALE)
+all: postgresql-queries postgresql-schema
 
 postgresql-schema: build
-	# patch up the DDL
-	rm -fr $@.tmp
+	# patch up the DDL so that we can understand it
+	rm -fr $@ $@.tmp
 	mkdir $@.tmp
 	cp build/dss.ddl $@.tmp/create-tables.sql
 	sed 's/CONNECT TO TPCD;//;\
@@ -42,16 +37,9 @@ postgresql-schema: build
 	awk '/^CREATE TABLE / { printf("DROP TABLE IF EXISTS %s CASCADE;\n", $$3); }' < build/dss.ddl > $@.tmp/drop-tables.sql
 	mv $@.tmp $@
 
-data-scale-$(TPCH_SCALE): build/dbgen
-	rm -fr $@ $@.tmp
-	mkdir $@.tmp
-	rm -f build/*.tbl
-	cd build && ./dbgen -s $(TPCH_SCALE)
-	mv build/*.tbl $@.tmp/
-	mv $@.tmp $@
-
 postgresql-queries: build/dbgen build/templates-modified-for-postgresql
-	rm -fr $@.tmp
+	# generate queries, and produce explain and explain-analyze versions of each
+	rm -fr $@ $@.tmp
 	mkdir $@.tmp
 	( \
 	  cd build ; \
@@ -65,7 +53,7 @@ postgresql-queries: build/dbgen build/templates-modified-for-postgresql
 
 build/templates-modified-for-postgresql: build
 	# convert :n to a PostgreSQL LIMIT clause
-	rm -fr $@.tmp
+	rm -fr $@ $@.tmp
 	mkdir $@.tmp
 	sed 's/:n -1//;s/s_suppkey;/s_suppkey LIMIT 1;/' < build/queries/15.sql > $@.tmp/15.sql
 	for I in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 17 18 19 20 21 ; do \
@@ -96,4 +84,4 @@ dbgen.zip:
 	wget -O $@ $(TPCH_DBGEN_GITHUB_ZIP)
 
 clean:
-	rm -fr dbgen.zip build postgresql-schema postgresql-queries data-scale-*
+	rm -fr dbgen.zip build postgresql-schema postgresql-queries
