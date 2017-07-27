@@ -6,6 +6,8 @@
 # postgresql-queries: versions of the TPC-H queries suitable for PostgreSQL
 # postgresql-schema:  versions of the DDL suitable for PostgreSQL
 # data-scale-X:       data files for scale X gigabytes
+#
+# Run as "make TPCH_SCALE=X" for scales other than 1.
 
 # The TPC-H dbgen tool is available from many locations.  This one happens to
 # be the top search result on Google today.  Let's use a specific commit so as
@@ -62,13 +64,16 @@ postgresql-queries: build/dbgen build/templates-modified-for-postgresql
 	mv $@.tmp $@
 
 build/templates-modified-for-postgresql: build
-	# qgen knows how to spell LIMIT on various other systems, but not postgres
-	# so we'll tweak the templates with sed
+	# convert :n to a PostgreSQL LIMIT clause
 	rm -fr $@.tmp
 	mkdir $@.tmp
 	sed 's/:n -1//;s/s_suppkey;/s_suppkey LIMIT 1;/' < build/queries/15.sql > $@.tmp/15.sql
 	for I in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 17 18 19 20 21 ; do \
-	  sed 's/;//;s/(3)//;s/:n[ -]*/LIMIT /' < build/queries/$$I.sql > $@.tmp/$$I.sql ; \
+	  sed 's/;//;\
+	       s/(3)//;\
+	       s/:n *-1//;\
+	       s/:n */LIMIT /'\
+	       < build/queries/$$I.sql > $@.tmp/$$I.sql ; \
 	  echo ';' >> $@.tmp/$$I.sql ; \
     done
 	mv $@.tmp $@
