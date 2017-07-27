@@ -5,7 +5,7 @@
 #
 # postgresql-queries: versions of the TPC-H queries suitable for PostgreSQL
 # postgresql-schema:  versions of the DDL suitable for PostgreSQL
-# postgresql-data:    versions of the data suitable for PostgreSQL COPY
+# data-scale-X:       data files for scale X gigabytes
 
 # The TPC-H dbgen tool is available from many locations.  This one happens to
 # be the top search result on Google today.  Let's use a specific commit so as
@@ -20,7 +20,7 @@ TPCH_DBGEN_GITHUB_ZIP=https://github.com/$(TPCH_DBGEN_GITHUB_USER)/$(TPCH_DBGEN_
 # Approximate number of gigabytes of data to create.
 TPCH_SCALE?=1
 
-all: postgresql-queries postgresql-schema postgresql-data
+all: postgresql-queries postgresql-schema data-scale-$(TPCH_SCALE)
 
 postgresql-schema: build
 	# patch up the DDL
@@ -40,13 +40,12 @@ postgresql-schema: build
 	awk '/^CREATE TABLE / { printf("DROP TABLE IF EXISTS %s CASCADE;\n", $$3); }' < build/dss.ddl > $@.tmp/drop-tables.sql
 	mv $@.tmp $@
 
-postgresql-data: build/nation.tbl
-	# remove some trailing | characters that COPY can't deal with
-	rm -fr $@.tmp
+data-scale-$(TPCH_SCALE): build/dbgen
+	rm -fr $@ $@.tmp
 	mkdir $@.tmp
-	for F in build/*.tbl ; do \
-	  sed 's/|$$//' < build/$$(basename $$F) > $@.tmp/$$(basename $$F) ; \
-	done
+	rm -f build/*.tbl
+	cd build && ./dbgen -s $(TPCH_SCALE)
+	mv build/*.tbl $@.tmp/
 	mv $@.tmp $@
 
 postgresql-queries: build/dbgen build/templates-modified-for-postgresql
@@ -61,9 +60,6 @@ postgresql-queries: build/dbgen build/templates-modified-for-postgresql
       done ; \
 	)
 	mv $@.tmp $@
-
-build/nation.tbl: build/dbgen
-	cd build && ./dbgen -s $(TPCH_SCALE)
 
 build/templates-modified-for-postgresql: build
 	# qgen knows how to spell LIMIT on various other systems, but not postgres
@@ -85,7 +81,7 @@ build/Makefile: build
 	# the following details are not true...
 	sed 's/^CC *=.*$$/CC=cc/;\
 	     s/^DATABASE *=.*$$/DATABASE=ORACLE/;\
-	     s/^MACHINE *=.*$$/MACHINE=LINUX -D_POSIX_SOURCE/;\
+	     s/^MACHINE *=.*$$/MACHINE=LINUX -D_POSIX_SOURCE -DEOL_HANDLING/;\
 	     s/^WORKLOAD *=.*$$/WORKLOAD=TPCH/' < $</makefile.suite > $@
 
 build: dbgen.zip
@@ -95,4 +91,4 @@ dbgen.zip:
 	wget -O $@ $(TPCH_DBGEN_GITHUB_ZIP)
 
 clean:
-	rm -fr dbgen.zip build postgresql-schema postgresql-queries postgresql-data
+	rm -fr dbgen.zip build postgresql-schema postgresql-queries data-scale-*
