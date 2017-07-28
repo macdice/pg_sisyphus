@@ -24,7 +24,7 @@ postgresql-schema: build
 	rm -fr $@ $@.tmp
 	mkdir $@.tmp
 	cp build/dss.ddl $@.tmp/create-tables.sql
-	sed 's/CONNECT TO TPCD;//;\
+	sed "s/CONNECT TO TPCD;//;\
 	     s/TPCD\.//;\
 	     s/COMMIT WORK;//;\
 	     s/PARTSUPP;$$/PARTSUPP (PS_PARTKEY,PS_SUPPKEY);/;\
@@ -32,7 +32,7 @@ postgresql-schema: build
 	     s/O_ORDERSKEY/O_ORDERKEY/;\
 	     s/C_CUSTOMERKEY/C_CUSTKEY/;\
 	     s/S_SUPPLIERKEY/S_SUPPKEY/;\
-	     s/FOREIGN KEY [A-Z0-9_]* /FOREIGN KEY /;' \
+	     s/FOREIGN KEY [A-Z0-9_]* /FOREIGN KEY /;" \
 	     < build/dss.ri > $@.tmp/alter-tables.sql
 	awk '/^CREATE TABLE / { printf("DROP TABLE IF EXISTS %s CASCADE;\n", $$3); }' < build/dss.ddl > $@.tmp/drop-tables.sql
 	mv $@.tmp $@
@@ -57,10 +57,10 @@ build/templates-modified-for-postgresql: build
 	mkdir $@.tmp
 	sed 's/:n -1//;s/s_suppkey;/s_suppkey LIMIT 1;/' < build/queries/15.sql > $@.tmp/15.sql
 	for I in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 17 18 19 20 21 ; do \
-	  sed 's/;//;\
+	  sed "s/;//;\
 	       s/(3)//;\
 	       s/:n *-1//;\
-	       s/:n */LIMIT /'\
+	       s/:n */LIMIT /"\
 	       < build/queries/$$I.sql > $@.tmp/$$I.sql ; \
 	  echo ';' >> $@.tmp/$$I.sql ; \
     done
@@ -72,10 +72,10 @@ build/dbgen: build/Makefile
 
 build/Makefile: build
 	# the following details are not true...
-	sed 's/^CC *=.*$$/CC=cc/;\
+	sed "s/^CC *=.*$$/CC=cc/;\
 	     s/^DATABASE *=.*$$/DATABASE=ORACLE/;\
-	     s/^MACHINE *=.*$$/MACHINE=LINUX -D_POSIX_SOURCE -DEOL_HANDLING/;\
-	     s/^WORKLOAD *=.*$$/WORKLOAD=TPCH/' < $</makefile.suite > $@
+		 s/^MACHINE *=.*$$/MACHINE=LINUX -D_POSIX_SOURCE -DEOL_HANDLING/;\
+		 s/^WORKLOAD *=.*$$/WORKLOAD=TPCH/" < $</makefile.suite > $@
 
 build: dbgen.tar.gz
 	tar xzvf $< && mv $(TPCH_DBGEN_GITHUB_REPO)-$(TPCH_DBGEN_GITHUB_COMMIT) build
