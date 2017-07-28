@@ -1,0 +1,12 @@
+This directory contains sripts that can create clusters loaded with
+benchmarking data reproducibly.  Since large benchmark datasets can take a lot
+of time to load, they try to reuse existing clusters if they are compatible
+with the current PostgreSQL build's catversion.
+
+Cluster recipes should expect to be run with pg_sisyphus as the present
+working directory.  They should respect the SISYPHUS_CLUSTERS environment
+variable, defaulting to "clusters" if it's not set, and create a subdirectory
+under there, with further per-catversion subdirectories.  If they find that
+the current catversion already exists, they should do nothing.  They should
+work in a way that doesn't leave a broken installation if they fail part-way
+through.  They should expect PATH to contain a PostgreSQL installation.

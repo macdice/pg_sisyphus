@@ -1,0 +1,4 @@
+The scripts in this directory assume that a PostgreSQL cluster is running on
+$SISYPHUS_PGPORT (defaulting to 25432).  They expect to be run from the top
+of the pg_sisyphus tree.  They run tests and write to standard out, using
+some special control strings to demarcate individual test runs.
