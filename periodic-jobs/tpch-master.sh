@@ -24,7 +24,8 @@ RUN_ID="` date "+%Y-%m-%d" `"
   # first, get an up-to-date PostgreSQL installation
   cd $SOURCE
   git pull
-  ./configure --prefix=$INSTALL --enable-debug --enable-depend CC="ccache cc"
+  MY_CC="$(if which ccache ; then echo "ccache cc" ; else echo "cc" ; fi)"
+  ./configure --prefix=$INSTALL --enable-debug --enable-depend CC="$MY_CC"
   make clean && make && make install && make check
 ) > $LOGS/$RUN_ID.build.log 2>&1
 
