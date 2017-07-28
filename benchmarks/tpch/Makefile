@@ -10,12 +10,12 @@
 # The TPC-H dbgen tool is available from many locations.  This one happens to
 # be the top search result on Google today.  Let's use a specific commit so as
 # to avoid picking up unintended changes later.  It'd be nice to be able to
-# use # http://tpc.org/tpch/spec/tpch_2_14_3.tgz but it seems to have
+# use # http://tpc.org/tpch/spec/tpch_2_14_3.tar.gz but it seems to have
 # disappeared from the interwebs.
 TPCH_DBGEN_GITHUB_USER=electrum
 TPCH_DBGEN_GITHUB_REPO=tpch-dbgen
 TPCH_DBGEN_GITHUB_COMMIT=5eab24aa876b56d2620c18f0a5a38c6348db37e7
-TPCH_DBGEN_GITHUB_ZIP=https://github.com/$(TPCH_DBGEN_GITHUB_USER)/$(TPCH_DBGEN_GITHUB_REPO)/archive/$(TPCH_DBGEN_GITHUB_COMMIT).zip
+TPCH_DBGEN_GITHUB_TARBALL=https://codeload.github.com/$(TPCH_DBGEN_GITHUB_USER)/$(TPCH_DBGEN_GITHUB_REPO)/tar.gz/$(TPCH_DBGEN_GITHUB_COMMIT)
 
 all: postgresql-queries postgresql-schema
 
@@ -77,11 +77,11 @@ build/Makefile: build
 	     s/^MACHINE *=.*$$/MACHINE=LINUX -D_POSIX_SOURCE -DEOL_HANDLING/;\
 	     s/^WORKLOAD *=.*$$/WORKLOAD=TPCH/' < $</makefile.suite > $@
 
-build: dbgen.zip
-	unzip $< && mv $(TPCH_DBGEN_GITHUB_REPO)-$(TPCH_DBGEN_GITHUB_COMMIT) build
+build: dbgen.tar.gz
+	tar xzvf $< && mv $(TPCH_DBGEN_GITHUB_REPO)-$(TPCH_DBGEN_GITHUB_COMMIT) build
 
-dbgen.zip:
-	wget -O $@ $(TPCH_DBGEN_GITHUB_ZIP)
+dbgen.tar.gz:
+	curl --output $@ $(TPCH_DBGEN_GITHUB_TARBALL)
 
 clean:
-	rm -fr dbgen.zip build postgresql-schema postgresql-queries
+	rm -fr dbgen.tar.gz build postgresql-schema postgresql-queries
