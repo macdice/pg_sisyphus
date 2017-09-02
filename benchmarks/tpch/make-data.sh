@@ -7,13 +7,13 @@ set -e
 
 SCALE=$1
 
-if [[ "$SCALE" == "" ]] ; then
+if [ "$SCALE" == "" ] ; then
   SCALE=1
 fi
 
 OUTPUT_DIR="data-scale-$SCALE"
 
-if [[ ! -e $OUTPUT_DIR ]] ; then
+if [ ! -e $OUTPUT_DIR ] ; then
   rm -fr $OUTPUT_DIR $OUTPUT_DIR.tmp
   rm -f build/*.tbl
   mkdir $OUTPUT_DIR.tmp
