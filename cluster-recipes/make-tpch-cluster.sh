@@ -25,7 +25,7 @@ if [ "$SISYPHUS_CLUSTERS" == "" ] ; then
   SISYPHUS_CLUSTERS=clusters
 fi
 CLUSTER_DIR="$SISYPHUS_CLUSTERS/$CLUSTER_NAME"
-CATVERSION_H=` pg_config --includedir`/server/catalog/catversion.h
+CATVERSION_H=` pg_config --includedir`/postgresql/server/catalog/catversion.h
 CATVERSION=` grep CATALOG_VERSION_NO $CATVERSION_H | cut -f2 `
 PGDATA=$CLUSTER_DIR/$CATVERSION
 
